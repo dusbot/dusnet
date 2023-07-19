@@ -5,8 +5,12 @@ import (
 	"dusnet/connect"
 	"dusnet/logger"
 	"dusnet/packet"
-	"errors"
+	"encoding/hex"
 	"fmt"
+)
+
+const (
+	MaxReadBufLen = 1024
 )
 
 // IBaseHandler 处理器基类接口
@@ -48,7 +52,8 @@ func (h *baseHandler) write(pkt packet.IPacket) error {
 	if err != nil {
 		return err
 	}
-	return h.conn.Write(buf)
+	_, err = h.conn.Write(buf)
+	return err
 }
 
 // 路由处理器，较baseHandler多实现了路由的函数HandleMsg0
@@ -59,21 +64,29 @@ type routerHandler struct {
 func (hr *routerHandler) HandleMsg0() error {
 	if hr.conn == nil || !hr.conn.Alive() {
 		logger.Error("connection not alive with baseHandler[%+v]", hr)
-		return errors.New(fmt.Sprintf("connection[%+v] not alive with baseHandler[%+v]", hr.conn, hr))
+		return fmt.Errorf("connection[%+v] not alive with baseHandler[%+v]", hr.conn, hr)
 	}
-	pkt, err := hr.codec0.Decode(hr.conn)
+	remoteAddr := fmt.Sprintf("%s:%d", hr.conn.GetRemoteHost(), hr.conn.GetRemotePort())
+	msgBuf := make([]byte, MaxReadBufLen)
+	i, err := hr.conn.Read(msgBuf)
 	if err != nil {
-		logger.Error("msg decode error,error:%+v", err)
+		logger.Error("Read msg error from %s,error:%+v", remoteAddr, err)
 		return err
 	}
-	logger.Debug("Receive msg[Head{id:%d,type:%d,length:%d}-Body{%s}] from address[%s:%d]",
-		pkt.GetID(), pkt.GetType(), pkt.GetBodyLen(), string(pkt.GetData()), hr.conn.GetRemoteHost(), hr.conn.GetRemotePort())
+	actualMsgBuf := msgBuf[:i]
+	logger.Info("Receive msg[%s] from %s", hex.EncodeToString(actualMsgBuf), remoteAddr)
+	pkt, err := hr.codec0.Decode(actualMsgBuf)
+	if err != nil {
+		return err
+	}
+	logger.Debug("Receive packet[Head{id:%d,type:%d,length:%d}-Body{%s}] from %s",
+		pkt.GetID(), pkt.GetType(), pkt.GetBodyLen(), string(pkt.GetData()), remoteAddr)
 	// todo renewal the connection
 	if h, ok := childHandlerMap[pkt.GetID()]; ok {
 		h.SetConn(hr.conn)
 		return h.HandleMsg(pkt)
 	}
-	return errors.New(fmt.Sprintf("No childHandler to handle this msg[type:%d,id:%d]", pkt.GetType(), pkt.GetID()))
+	return fmt.Errorf("no childHandler to handle this msg[type:%d,id:%d]", pkt.GetType(), pkt.GetID())
 }
 
 func (h *baseHandler) BindConn(conn connect.IConnection) {

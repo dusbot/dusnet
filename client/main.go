@@ -4,10 +4,11 @@ import (
 	zcodec "dusnet/codec"
 	"dusnet/packet"
 	"fmt"
-	"github.com/google/uuid"
 	"math/rand"
 	"net"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 		go func() {
 			for {
 				dialTest()
-				time.Sleep(time.Millisecond * 100)
+				time.Sleep(time.Second * 3)
 			}
 		}()
 	}

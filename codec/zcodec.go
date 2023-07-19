@@ -2,7 +2,6 @@ package zcodec
 
 import (
 	"bytes"
-	"dusnet/connect"
 	"dusnet/logger"
 	"dusnet/packet"
 	"encoding/binary"
@@ -18,7 +17,7 @@ const (
 
 type Icodec interface {
 	Encode(packet.IPacket) ([]byte, error)
-	Decode(connect.IConnection) (packet.IPacket, error)
+	Decode([]byte) (packet.IPacket, error)
 }
 
 func Default() Icodec {
@@ -57,16 +56,10 @@ func (c *codec) Encode(p packet.IPacket) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (c *codec) Decode(conn connect.IConnection) (packet.IPacket, error) {
+func (c *codec) Decode(raw []byte) (packet.IPacket, error) {
 	pkt := &packet.Packet{}
 	// decode head/id
-	idBuf := make([]byte, 4)
-	err := conn.Read(idBuf)
-	if err != nil {
-		logger.Error("conn.Read head/id error,error:%+v", err)
-		return pkt, err
-	}
-	err = binary.Read(bytes.NewBuffer(idBuf), binary.BigEndian, &pkt.ID)
+	err := binary.Read(bytes.NewBuffer(raw[:4]), binary.BigEndian, &pkt.ID)
 	if err != nil {
 		logger.Error("binary.Read head/id to pkt error,error:%+v", err)
 		return pkt, err
@@ -75,13 +68,7 @@ func (c *codec) Decode(conn connect.IConnection) (packet.IPacket, error) {
 		return pkt, errors.New("id zero value")
 	}
 
-	typeBuf := make([]byte, 2)
-	err = conn.Read(typeBuf)
-	if err != nil {
-		logger.Error("conn.Read head/type error,error:%+v", err)
-		return pkt, err
-	}
-	err = binary.Read(bytes.NewBuffer(typeBuf), binary.BigEndian, &pkt.Type)
+	err = binary.Read(bytes.NewBuffer(raw[4:6]), binary.BigEndian, &pkt.Type)
 	if err != nil {
 		logger.Error("binary.Read head/type to pkt error,error:%+v", err)
 		return pkt, err
@@ -90,26 +77,16 @@ func (c *codec) Decode(conn connect.IConnection) (packet.IPacket, error) {
 		return pkt, errors.New("pkt type " + strconv.Itoa(int(pkt.Type)) + " not defined")
 	}
 
-	// decode head/length
-	lengthBuf := make([]byte, 4)
-	err = conn.Read(lengthBuf)
-	if err != nil {
-		logger.Error("conn.Read head/length error,error:%+v", err)
-		return pkt, err
-	}
-	err = binary.Read(bytes.NewBuffer(lengthBuf), binary.BigEndian, &pkt.Length)
+	err = binary.Read(bytes.NewBuffer(raw[6:10]), binary.BigEndian, &pkt.Length)
 	if err != nil {
 		logger.Error("binary.Write head/length to pkt error,error:%+v", err)
 		return pkt, err
 	}
 
-	// decode head body/data
-	dataBuf := make([]byte, pkt.Length)
-	err = conn.Read(dataBuf)
 	if err != nil {
 		logger.Error("conn.Read body/data error,error:%+v", err)
 		return pkt, err
 	}
-	pkt.Data = dataBuf
+	pkt.Data = raw[10 : 10+pkt.Length]
 	return pkt, nil
 }

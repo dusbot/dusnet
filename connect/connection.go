@@ -10,17 +10,17 @@ import (
 )
 
 type IConnection interface {
-	Read([]byte) error     // 读取
-	Write([]byte) error    // 写入
-	Close() error          // 关闭
-	Alive() bool           // 是否存活
-	SetAlive(alive bool)   // 设置存活
-	GetID() uint64         // 获取连接id
-	SetID(uint64)          // 设置连接id
-	GetLocalHost() string  // 获取本地host
-	GetLocalPort() int     // 获取本地端口
-	GetRemoteHost() string // 获取远程host
-	GetRemotePort() int    // 获取远程端口
+	Read([]byte) (int, error)  // 读取
+	Write([]byte) (int, error) // 写入
+	Close() error              // 关闭
+	Alive() bool               // 是否存活
+	SetAlive(alive bool)       // 设置存活
+	GetID() uint64             // 获取连接id
+	SetID(uint64)              // 设置连接id
+	GetLocalHost() string      // 获取本地host
+	GetLocalPort() int         // 获取本地端口
+	GetRemoteHost() string     // 获取远程host
+	GetRemotePort() int        // 获取远程端口
 }
 
 type IConnectionMgr interface {
@@ -83,14 +83,14 @@ func (m *mConnection) GetID() uint64 {
 	return m.id
 }
 
-func (m *mConnection) Read(bytes []byte) error {
-	_, err := m.conn.Read(bytes)
-	return err
+func (m *mConnection) Read(bytes []byte) (int, error) {
+	i, err := m.conn.Read(bytes)
+	return i, err
 }
 
-func (m *mConnection) Write(bytes []byte) error {
-	_, err := m.conn.Write(bytes)
-	return err
+func (m *mConnection) Write(bytes []byte) (int, error) {
+	i, err := m.conn.Write(bytes)
+	return i, err
 }
 
 func (m *mConnection) GetRemoteHost() string {
