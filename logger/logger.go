@@ -2,9 +2,10 @@ package logger
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"log"
 	"time"
+
+	"github.com/spf13/viper"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"

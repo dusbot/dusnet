@@ -77,6 +77,7 @@ func (hr *routerHandler) HandleMsg0() error {
 	logger.Info("Receive msg[%s] from %s", hex.EncodeToString(actualMsgBuf), remoteAddr)
 	pkt, err := hr.codec0.Decode(actualMsgBuf)
 	if err != nil {
+		hr.conn.Write([]byte(err.Error() + "\n"))
 		return err
 	}
 	logger.Debug("Receive packet[Head{id:%d,type:%d,length:%d}-Body{%s}] from %s",
