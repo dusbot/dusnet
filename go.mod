@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/google/uuid v1.1.2
-	github.com/jasonlvhit/gocron v0.0.1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.24.0
