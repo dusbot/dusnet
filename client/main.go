@@ -11,33 +11,31 @@ import (
 	"github.com/google/uuid"
 )
 
+var ids = []uint32{1000, 2000, 3000}
+
 func main() {
 	data := []byte(uuid.New().String())
-	send(&packet.Packet{
-		PacketHead: packet.PacketHead{
-			ID:     1000,
-			Type:   1234,
-			Length: uint32(len(data)),
-		},
-		PacketBody: packet.PacketBody{Data: data},
-	}, 9000)
-	// for i := 0; i < 100; i++ {
-	// 	go func() {
-	// 		for {
-	// 			dialTest()
-	// 			time.Sleep(time.Second * 3)
-	// 		}
-	// 	}()
-	// }
-	// select {}
+	var pkts []packet.IPacket
+	for i := 0; i < 3; i++ {
+		pkt := packet.Packet{
+			PacketHead: packet.PacketHead{
+				ID:     ids[i],
+				Type:   1234,
+				Length: uint32(len(data)),
+			},
+			PacketBody: packet.PacketBody{Data: data},
+		}
+		pkts = append(pkts, &pkt)
+	}
+	send(9000, pkts...)
 }
 
-func send(pkt packet.IPacket, port ...int) {
+func send(port int, pkts ...packet.IPacket) {
 	var saddr string
-	if port == nil || port[0] == 0 {
+	if port == 0 {
 		saddr = fmt.Sprintf("0.0.0.0:%d", rand.Intn(3)+9000)
 	} else {
-		saddr = fmt.Sprintf("0.0.0.0:%d", port[0])
+		saddr = fmt.Sprintf("0.0.0.0:%d", port)
 	}
 	dial, err := net.Dial("tcp", saddr)
 	if err != nil {
@@ -45,9 +43,11 @@ func send(pkt packet.IPacket, port ...int) {
 		return
 	}
 	defer dial.Close()
-	buf, err := zcodec.Default().Encode(pkt)
-	if err != nil {
-		panic(err)
+	for _, pkt := range pkts {
+		buf, err := zcodec.Default().Encode(pkt)
+		if err != nil {
+			panic(err)
+		}
+		dial.Write(buf)
 	}
-	dial.Write(buf)
 }

@@ -15,22 +15,22 @@ func main() {
 	}
 	defer s1.Stop()
 
-	s2, err2 := startServer("mint_server2", "tcp", "0.0.0.0", 9001)
-	if err2 != nil {
-		logger.Error("tcp connect error,error:%+v", err2)
-		errCount++
-	}
-	defer s2.Stop()
+	// s2, err2 := startServer("mint_server2", "tcp", "0.0.0.0", 9001)
+	// if err2 != nil {
+	// 	logger.Error("tcp connect error,error:%+v", err2)
+	// 	errCount++
+	// }
+	// defer s2.Stop()
 
-	s3, err3 := startServer("mint_server3", "tcp", "0.0.0.0", 9002)
-	if err3 != nil {
-		logger.Error("tcp connect error,error:%+v", err3)
-		errCount++
-	}
-	defer s3.Stop()
-	if errCount == 3 {
-		panic("all server shutdown already!,program quit")
-	}
+	// s3, err3 := startServer("mint_server3", "tcp", "0.0.0.0", 9002)
+	// if err3 != nil {
+	// 	logger.Error("tcp connect error,error:%+v", err3)
+	// 	errCount++
+	// }
+	// defer s3.Stop()
+	// if errCount == 3 {
+	// 	panic("all server shutdown already!,program quit")
+	// }
 	select {}
 }
 
